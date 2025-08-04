@@ -3,7 +3,7 @@ mod ops;
 mod util;
 
 pub use array::{Array, ArrayIndices, LinearIndices};
-pub use ops::{nr_add, nr_arange, nr_mul, nr_random, nr_reshape_new};
+pub use ops::{nr_add, nr_arange, nr_mul, nr_random, nr_reshape_new, nr_matmul};
 
 #[cfg(test)]
 mod test {
