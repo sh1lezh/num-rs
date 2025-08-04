@@ -147,7 +147,7 @@ num-rs/
 │   ├── array.rs     # Array struct and core functionality
 │   ├── ops.rs       # Array operations (arange, add, mul, matmul)
 │   ├── util.rs      # Utility functions (random number generation)
-│    ├── main.rs      # Example usage
+│   ├── main.rs      # Example usage
 ├── README.md        # Project documentation
 ```
 
@@ -187,7 +187,7 @@ Please include tests for new features and update this README as needed.
 - **ndarray**: [Rust ndarray Crate](https://crates.io/crates/ndarray)
 
 ## License
-This project is licensed under the MIT License. See the `LICENSE` file for details (to be added).
+This project is licensed under the MIT License. Havent updated the license yet.
 
 ## Contact
-For questions or suggestions, open an issue or contact the maintainer at [contachsh1lezh@gmail.com] or [x.com/sh1lezh].
+For questions or suggestions, open an issue or contact the maintainer at [contachsh1lezh@gmail.com] 
