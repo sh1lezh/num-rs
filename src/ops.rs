@@ -167,7 +167,7 @@ pub fn nr_matmul(a: &Array, b: &Array) -> Array {
                         a_index1d += (nd_index[d] * a.strides[d]) as usize;
                     }
                     for d in 0..b.ndim - 2 {
-                        b_index1d += (nd_index[d] * a.strides[d]) as usize;
+                        b_index1d += (nd_index[d] * b.strides[d]) as usize;
                     }
                     a_index1d += (i * a.strides[a.ndim - 2] as usize + k * a.strides[a.ndim -1] as usize) / a.itemsize;
                     b_index1d += (k * b.strides[b.ndim - 2] as usize + j * b.strides[b.ndim - 1] as usize) / b.itemsize;
