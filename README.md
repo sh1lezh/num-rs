@@ -2,7 +2,7 @@
 
 `num-rs` is a lightweight Rust library for multidimensional array operations, inspired by Python's NumPy. It provides a robust foundation for numerical computing, featuring array creation, reshaping, element-wise operations, broadcasting, and matrix multiplication. Designed for safety, performance, and extensibility, `num-rs` leverages Rust's type system and zero-cost abstractions to deliver efficient numerical computations.
 
-**Note**: This project is under active development. Current features focus on core array operations, with plans to expand to generic types, advanced indexing, and optimized linear algebra routines.
+**Note**: This project is under active development. Current features focus on core array operations, with plans to expand to advanced indexing and optimized linear algebra routines.
 
 ## Features
 
@@ -20,6 +20,7 @@
   - `nr_print_info`: Display array metadata, including shape, strides, and memory layout.
 - **Performance**: Utilizes `rayon` for parallelized operations in `nr_add`, ensuring efficient computation on multi-core systems.
 - **Safety**: Built with Rust’s memory safety guarantees, using `Vec` for dynamic memory management.
+- **Generic Types**: Supports multiple data types (`f32`, `f64`, `i32`, etc.) using Rust generics for flexible numerical computations.
 - **Benchmarking**: Includes a `benchmarks.rs` file with `criterion` for performance testing of key operations.
 
 ## Installation
@@ -57,7 +58,8 @@
 
 - `rand = "0.9.2"`: Enables random number generation for `nr_random`.
 - `rayon = "1.10.0"`: Provides parallel processing for `nr_add`.
-- Optional: `criterion = "0.5.1"` for running benchmarks (used in `benchmarks.rs`).
+- `num-traits = "0.2"`: Enables generic numerical operations across different data types.
+- Optional: `criterion = "0.7.0"` for running benchmarks (used in `benchmarks.rs`).
 
 ## Usage
 
@@ -173,7 +175,7 @@ print(arr)
 num-rs/
 ├── Cargo.toml       # Project configuration and dependencies
 ├── benches/
-    ├── benchmarks.rs    # Performance benchmarks using Criterion
+│   ├── benchmarks.rs    # Performance benchmarks using Criterion
 ├── src/
 │   ├── array.rs     # Core Array struct and indexing logic
 │   ├── lib.rs       # Library entry point, re-exports public APIs
@@ -217,7 +219,7 @@ Benchmarks include:
 
 `num-rs` aims to evolve into a comprehensive numerical computing library, approaching the functionality of Rust’s `ndarray` or NumPy. Planned enhancements include:
 
-- **Generic Types**: Support for multiple data types (`f32`, `f64`, `i32`, etc.) using Rust generics.
+- **Generic Types**: *Completed* - Support for multiple data types (`f32`, `f64`, `i32`, etc.) using Rust generics.
 - **Advanced Indexing**: Implement NumPy-like slicing (e.g., `arr[1:3, :, 2]`) and boolean indexing.
 - **Expanded Operations**: Add statistical functions (`sum`, `mean`, `max`), trigonometric functions (`sin`, `cos`), and more.
 - **Shape Manipulation**: Support `transpose`, `expand_dims`, `squeeze`, and `concatenate`.
@@ -249,4 +251,4 @@ This project is licensed under the MIT License. The license file is pending fina
 
 ## Contact
 
-For questions, suggestions, or issues, please open an issue on GitHub or contact the maintainer at \[contachsh1lezh@gmail.com\].
+For questions, suggestions, or issues, please open an issue on GitHub or contact the maintainer at [contachsh1lezh@gmail.com].
