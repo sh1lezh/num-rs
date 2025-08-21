@@ -2,33 +2,45 @@
 use crate::array::{Array, ArrayIndices, LinearIndices};
 use crate::util::get_random_float;
 use rayon::prelude::*;
+use std::ops::{Add, Mul, Sub, Div};
+use std::process::Output;
+use num_traits::{Num, Float, Zero, ToPrimitive};
+use std::iter::Sum;
 
-pub fn nr_arange(start: f32, end: f32, step: f32) -> Array {
+pub fn nr_arange<T>(start: T, end: T, step: T) -> Array<T>
+where 
+    T: Num + PartialOrd + Copy + ToPrimitive,
+{
     if start >= end {
         panic!("Start value must be less than end value");
     }
-    if step <= 0.0 {
+    if step <= T::zero() {
         panic!("Step value must be positive");
     }
 
-    let len = ((end - start) / step).ceil() as i32;
+    let len = (((end - start) / step).to_f64().unwrap()).ceil() as i32;
     let shape = vec![len];
     let mut arr = Array::nr_create(&shape, 1);
+    let mut current = start;
     for i in 0..len as usize {
-        arr.data[i] = start + i as f32 * step;
+        arr.data[i] = current;
+        current = current + step;
     }
     arr
 }
 
-pub fn nr_random(shape: &[i32], ndim: usize) -> Array {
+pub fn nr_random<T>(shape: &[i32], ndim: usize) -> Array<T>
+where 
+    T: Float,
+{
     let mut arr = Array::nr_create(shape, ndim);
     for i in 0..arr.totalsize {
-        arr.data[i] = get_random_float(0.0, 1.0);
+        arr.data[i] = T::from(get_random_float(0.0, 1.0)).unwrap();
     }
     arr
 }
 
-pub fn nr_reshape_new(arr: &Array, shape: &[i32], ndim: usize) -> Array {
+pub fn nr_reshape_new<T:Copy + Zero>(arr: &Array<T>, shape: &[i32], ndim: usize) -> Array<T> {
     let new_totalsize = shape.iter().product::<i32>() as usize;
     if new_totalsize != arr.totalsize {
         panic!("Cannot reshape due to invalid shape");
@@ -38,7 +50,7 @@ pub fn nr_reshape_new(arr: &Array, shape: &[i32], ndim: usize) -> Array {
     new_arr
 }
 
-fn broadcast_final_shape(a: &Array, b: &Array) -> Option<Vec<i32>> {
+fn broadcast_final_shape<T>(a: &Array<T>, b: &Array<T>) -> Option<Vec<i32>> {
     if a.shape == b.shape {
         return Some(a.shape.clone());
     }
@@ -65,7 +77,7 @@ fn broadcast_final_shape(a: &Array, b: &Array) -> Option<Vec<i32>> {
     Some(res_shape)
 }
 
-fn broadcast_array(arr: &Array, shape: &[i32], ndim: usize) -> Array {
+fn broadcast_array<T: Copy + Zero>(arr: &Array<T>, shape: &[i32], ndim: usize) -> Array<T> {
     let mut res = Array::nr_create(shape, ndim);
     let n_prepend = ndim - arr.ndim;
 
@@ -81,7 +93,10 @@ fn broadcast_array(arr: &Array, shape: &[i32], ndim: usize) -> Array {
     res
 }
 
-pub fn nr_add(a: &Array, b: &Array) -> Array {
+pub fn nr_add<T>(a: &Array<T>, b: &Array<T>) -> Array<T>
+where 
+    T: Copy + Zero + Add<Output = T> + Send + Sync,
+{
     if a.shape == b.shape {
         let mut res = Array::nr_create(&a.shape, a.ndim);
         res.data.par_iter_mut().enumerate().for_each(|(i, val)| {
@@ -101,7 +116,10 @@ pub fn nr_add(a: &Array, b: &Array) -> Array {
     res
 }
 
-pub fn nr_mul(a: &Array, b: &Array) -> Array {
+pub fn nr_mul<T>(a: &Array<T>, b: &Array<T>) -> Array<T>
+where 
+    T: Copy + Zero + Mul<Output = T>,
+{
     if a.shape == b.shape {
         let mut res = Array::nr_create(&a.shape, a.ndim);
         for i in 0..a.totalsize {
@@ -121,7 +139,10 @@ pub fn nr_mul(a: &Array, b: &Array) -> Array {
     res
 }
 
-pub fn nr_matmul(a: &Array, b: &Array) -> Array {
+pub fn nr_matmul<T>(a: &Array<T>, b: &Array<T>) -> Array<T>
+where 
+    T: Num + Copy + Sum,
+{
     if a.ndim < 2 || b.ndim < 2 {
         panic!("Both arrays must have atleast 2 dimensions for matmul");
     }
@@ -154,12 +175,12 @@ pub fn nr_matmul(a: &Array, b: &Array) -> Array {
     let n = a.shape[a.ndim - 1] as usize;
     let p = b.shape[b.ndim - 1] as usize;
 
-    let idxs = Array::create_array_indices(&result_shape[..result_ndim -2], result_ndim - 2);
+    let idxs = Array::<T>::create_array_indices(&result_shape[..result_ndim -2], result_ndim - 2);
     for idx in 0..idxs.count {
         let nd_index = &idxs.indices[idx];
         for i in 0..m {
             for j in 0..p {
-                let mut sum = 0.0;
+                let mut sum = T::zero();
                 for k in 0..n {
                     let mut a_index1d = 0;
                     let mut b_index1d = 0;
@@ -171,7 +192,7 @@ pub fn nr_matmul(a: &Array, b: &Array) -> Array {
                     }
                     a_index1d += (i * a.strides[a.ndim - 2] as usize + k * a.strides[a.ndim -1] as usize) / a.itemsize;
                     b_index1d += (k * b.strides[b.ndim - 2] as usize + j * b.strides[b.ndim - 1] as usize) / b.itemsize;
-                    sum += a.data[a_index1d] * b.data[b_index1d];
+                    sum = sum + a.data[a_index1d] * b.data[b_index1d];
                 }
                 let mut r_index1d = 0;
                 for d in 0..result.ndim - 2 {

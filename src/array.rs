@@ -1,8 +1,7 @@
 #![allow(unused)]
 use std::mem;
-use crate::util::{get_random_float};
-use std::ptr;
-
+use num_traits::Zero;
+use std::fmt::{Debug, Display};
 
 // ArrayIndices for n-dimensional indexing
 #[derive(Debug)]
@@ -20,8 +19,8 @@ pub struct LinearIndices {
 
 // Main Array struct
 #[derive(Debug)]
-pub struct Array {
-    pub data: Vec<f32>,         // Data buffer
+pub struct Array<T> {
+    pub data: Vec<T>,         // Data buffer
     pub shape: Vec<i32>,        // Shape of the array
     pub strides: Vec<i32>,      // Strides for each dimension
     pub backstrides: Vec<i32>,  // Backstrides for reverse traversal
@@ -35,14 +34,17 @@ pub struct Array {
 }
 
 
-impl Array {
+impl<T> Array<T>
+where
+    T: Copy + Zero,
+{
     // Create a new Array with given shape and number of dimensions
-    pub fn nr_create(shape: &[i32], ndim: usize) -> Array {
+    pub fn nr_create(shape: &[i32], ndim: usize) -> Array<T> {
         if ndim == 0 || shape.len() != ndim {
             panic!("Cannot initialize Array with ndim {} or invalid shape", ndim);
         }
 
-        let itemsize = std::mem::size_of::<f32>();
+        let itemsize = std::mem::size_of::<T>();
         let mut totalsize = 1;
         for &dim in shape {
             if dim <= 0 {
@@ -52,7 +54,7 @@ impl Array {
         }
 
         // Initialize data with zeros
-        let data = vec![0.0; totalsize];
+        let data = vec![T::zero(); totalsize];  
         let shape = shape.to_vec();
         let mut strides = vec![0; ndim];
         let mut backstrides = vec![0; ndim];
@@ -69,8 +71,8 @@ impl Array {
         }
 
         // Create indices
-        let idxs = Array::create_array_indices(&shape, ndim);
-        let lidxs = Array::create_linear_indices(&shape, &strides, itemsize, totalsize);
+        let idxs = Array::<T>::create_array_indices(&shape, ndim);
+        let lidxs = Array::<T>::create_linear_indices(&shape, &strides, itemsize, totalsize);
 
         // Set order flags
         let c_order = strides[ndim - 1] == itemsize as i32;
@@ -116,7 +118,7 @@ impl Array {
     // Create linear indices
     fn create_linear_indices(shape: &[i32], strides: &[i32], itemsize: usize, totalsize: usize) -> LinearIndices {
         let mut indices = vec![0; totalsize];
-        let idxs = Array::create_array_indices(shape, shape.len());
+        let idxs = Array::<T>::create_array_indices(shape, shape.len());
         for i in 0..totalsize {
             let mut idx = 0;
             for j in 0..shape.len() {
@@ -135,39 +137,40 @@ impl Array {
         println!("Array is F-contiguous? {}", self.f_order);
     }
 
-    // Display array data (similar to nrShow)
+}
+
+impl<T: Display + Copy> Array<T> {
     pub fn nr_show(&self) {
-        fn traverse_helper(
-            data: &[f32],
-            shape: &[i32],
-            strides: &[i32],
-            backstrides: &[i32],
-            ndim: usize,
-            depth: usize,
-            curr: usize,
-        ) -> usize {
-            if depth == ndim - 1 {
-                print!("{:.3} ", data[curr]);
-                let mut new_curr = curr;
-                for _ in 0..shape[ndim - 1] - 1 {
-                    new_curr += (strides[ndim - 1] / std::mem::size_of::<f32>() as i32) as usize;
-                    print!("{:.3} ", data[new_curr]);
+        fn print_recursive<T: std::fmt::Display>(data_slice: &[T], shape: &[i32]) {
+            // Base case: If the shape is 1D, print all elements separated by spaces.
+            if shape.len() == 1 {
+                for i in 0..shape[0] as usize {
+                    print!("{} ", data_slice[i]);
                 }
                 println!();
-                new_curr + (backstrides[ndim - 1] / std::mem::size_of::<f32>() as i32) as usize
-            } else {
-                let mut new_curr = traverse_helper(data, shape, strides, backstrides, ndim, depth + 1, curr);
-                for _ in 0..shape[depth] - 1 {
-                    new_curr += (strides[depth] / std::mem::size_of::<f32>() as i32) as usize;
-                    new_curr = traverse_helper(data, shape, strides, backstrides, ndim, depth + 1, new_curr);
-                }
-                if depth != 0 {
-                    println!();
-                }
-                new_curr + (backstrides[depth] / std::mem::size_of::<f32>() as i32) as usize
+                return;
+            }
+
+            // Recursive step:
+            let remaining_shape = &shape[1..];
+            // The size of each sub-block is the product of the remaining dimensions.
+            let block_size = remaining_shape.iter().product::<i32>() as usize;
+
+            for i in 0..shape[0] as usize {
+                // Calculate the slice for the current sub-block.
+                let start = i * block_size;
+                let end = start + block_size;
+                print_recursive(&data_slice[start..end], remaining_shape);
+            }
+            
+            // Add a newline for visual separation between higher-dimensional blocks.
+            if shape.len() > 2 {
+                 println!();
             }
         }
-
-        traverse_helper(&self.data, &self.shape, &self.strides, &self.backstrides, self.ndim, 0, 0);
+        
+        if !self.data.is_empty() {
+            print_recursive(&self.data, &self.shape);
+        }
     }
 }

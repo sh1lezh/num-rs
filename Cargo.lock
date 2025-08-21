@@ -245,6 +245,7 @@ name = "num-rs"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "num-traits",
  "rand",
  "rayon",
 ]
